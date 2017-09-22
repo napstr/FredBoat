@@ -26,6 +26,7 @@
 package fredboat.messaging;
 
 import fredboat.feature.I18n;
+import fredboat.util.log.LogTheStackException;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.MessageBuilder;
@@ -48,6 +49,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collection;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -215,6 +217,7 @@ public class CentralMessaging {
     public static void sendShardlessMessage(JDA jda, long channelId, String content) {
         JSONObject body = new JSONObject();
         body.put("content", content);
+        LogTheStackException stackTrace = LogTheStackException.createStackTrace();
         new RestAction<Void>(jda, Route.Messages.SEND_MESSAGE.compile(Long.toString(channelId)), body) {
             @Override
             protected void handleResponse(Response response, Request<Void> request) {
@@ -223,7 +226,7 @@ public class CentralMessaging {
                 else
                     request.onFailure(response);
             }
-        }.queue();
+        }.queue(null, t -> stackTraceOnFail(t, stackTrace));
     }
 
     // ********************************************************************************
@@ -389,7 +392,8 @@ public class CentralMessaging {
 
     public static void sendTyping(MessageChannel channel) {
         try {
-            channel.sendTyping().queue();
+            LogTheStackException stackTrace = LogTheStackException.createStackTrace();
+            channel.sendTyping().queue(null, t -> stackTraceOnFail(t, stackTrace));
         } catch (InsufficientPermissionException e) {
             handleInsufficientPermissionsException(channel, e);
         }
@@ -397,11 +401,12 @@ public class CentralMessaging {
 
     //messages must all be from the same channel
     public static void deleteMessages(Collection<Message> messages) {
+        LogTheStackException stackTrace = LogTheStackException.createStackTrace();
         if (!messages.isEmpty()) {
             MessageChannel channel = messages.iterator().next().getChannel();
             if (channel instanceof TextChannel) {
                 try {
-                    ((TextChannel) channel).deleteMessages(messages).queue();
+                    ((TextChannel) channel).deleteMessages(messages).queue(null, t -> stackTraceOnFail(t, stackTrace));
                 } catch (InsufficientPermissionException e) {
                     handleInsufficientPermissionsException(channel, e);
                 }
@@ -416,8 +421,9 @@ public class CentralMessaging {
     }
 
     public static void deleteMessageById(MessageChannel channel, long messageId) {
+        LogTheStackException stackTrace = LogTheStackException.createStackTrace();
         try {
-            channel.deleteMessageById(messageId).queue();
+            channel.deleteMessageById(messageId).queue(null, t -> stackTraceOnFail(t, stackTrace));
         } catch (InsufficientPermissionException e) {
             handleInsufficientPermissionsException(channel, e);
         }
@@ -443,18 +449,8 @@ public class CentralMessaging {
         }
 
         MessageFuture result = new MessageFuture();
-        Consumer<Message> successWrapper = m -> {
-            result.complete(m);
-            if (onSuccess != null) {
-                onSuccess.accept(m);
-            }
-        };
-        Consumer<Throwable> failureWrapper = t -> {
-            result.completeExceptionally(t);
-            if (onFail != null) {
-                onFail.accept(t);
-            }
-        };
+        Consumer<Message> successWrapper = getDefaultSuccessWrapper(result, onSuccess);
+        Consumer<Throwable> failureWrapper = getDefaultFailureWrapper(result, onFail, LogTheStackException.createStackTrace());
 
         try {
             channel.sendMessage(message).queue(successWrapper, failureWrapper);
@@ -477,18 +473,8 @@ public class CentralMessaging {
         }
 
         MessageFuture result = new MessageFuture();
-        Consumer<Message> successWrapper = m -> {
-            result.complete(m);
-            if (onSuccess != null) {
-                onSuccess.accept(m);
-            }
-        };
-        Consumer<Throwable> failureWrapper = t -> {
-            result.completeExceptionally(t);
-            if (onFail != null) {
-                onFail.accept(t);
-            }
-        };
+        Consumer<Message> successWrapper = getDefaultSuccessWrapper(result, onSuccess);
+        Consumer<Throwable> failureWrapper = getDefaultFailureWrapper(result, onFail, LogTheStackException.createStackTrace());
 
         try {
             channel.sendFile(file, message).queue(successWrapper, failureWrapper);
@@ -510,18 +496,8 @@ public class CentralMessaging {
         }
 
         MessageFuture result = new MessageFuture();
-        Consumer<Message> successWrapper = m -> {
-            result.complete(m);
-            if (onSuccess != null) {
-                onSuccess.accept(m);
-            }
-        };
-        Consumer<Throwable> failureWrapper = t -> {
-            result.completeExceptionally(t);
-            if (onFail != null) {
-                onFail.accept(t);
-            }
-        };
+        Consumer<Message> successWrapper = getDefaultSuccessWrapper(result, onSuccess);
+        Consumer<Throwable> failureWrapper = getDefaultFailureWrapper(result, onFail, LogTheStackException.createStackTrace());
 
         try {
             channel.editMessageById(oldMessageId, newMessage).queue(successWrapper, failureWrapper);
@@ -542,4 +518,37 @@ public class CentralMessaging {
         sendMessage(channel, i18n.getString("permissionMissingBot") + " " + e.getPermission().getName());
     }
 
+    private static <T> Consumer<T> getDefaultSuccessWrapper(@Nonnull CompletableFuture<T> result,
+                                                            @Nullable Consumer<T> onSuccess) {
+        return m -> {
+            result.complete(m);
+            if (onSuccess != null) {
+                onSuccess.accept(m);
+            }
+        };
+    }
+
+    //wraps a consumer of throwables (used in queue()s) to complete a future and optionally show a proper stacktrace
+    //NOTE: the throwble sent to this consumer may not have an initialized cause
+    private static Consumer<Throwable> getDefaultFailureWrapper(@Nonnull CompletableFuture result,
+                                                                @Nullable Consumer<Throwable> wrapThisOne,
+                                                                @Nullable LogTheStackException stackTrace) {
+        return t -> {
+            stackTraceOnFail(t, stackTrace);
+            result.completeExceptionally(t);
+            if (wrapThisOne != null) {
+                wrapThisOne.accept(t);
+            }
+        };
+    }
+
+    //link two exceptions together. make sure the passed Throwable t has no initialized cause
+    private static void stackTraceOnFail(@Nonnull Throwable t, @Nullable LogTheStackException ex) {
+        if (ex != null) {
+            ex.initCause(t);
+            log.error("queue() threw exception:", ex);
+        } else {
+            log.error("queue() threw exception:", t);
+        }
+    }
 }

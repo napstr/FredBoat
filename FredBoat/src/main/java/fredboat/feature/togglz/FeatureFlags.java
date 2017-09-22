@@ -55,6 +55,10 @@ public enum FeatureFlags implements Feature {
 
     @Label("Force soundcloud search instead of youtube")
     FORCE_SOUNDCLOUD_SEARCH,
+
+    //see LogTheStackException for more details on using this, TL;DR: don't
+    @Label("Add stack traces to queue() exceptions")
+    FULL_STACK_TRACES_FOR_QUEUED_REST_ACTIONS,
     ;
 
     public boolean isActive() {
