@@ -31,7 +31,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.beam.BeamAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
@@ -56,10 +55,12 @@ import lavalink.client.player.LavalinkPlayer;
 import lavalink.client.player.LavaplayerPlayerWrapper;
 import lavalink.client.player.event.AudioEventAdapterWrapped;
 import net.dv8tion.jda.core.audio.AudioSendHandler;
+import net.dv8tion.jda.core.entities.Guild;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -79,9 +80,9 @@ public abstract class AbstractPlayer extends AudioEventAdapterWrapped implements
     protected Consumer<Throwable> onErrorHook;
 
     @SuppressWarnings("LeakingThisInConstructor")
-    AbstractPlayer(String guildId) {
+    AbstractPlayer(@Nonnull Guild guild) {
         initAudioPlayerManager();
-        player = LavalinkManager.ins.createPlayer(guildId);
+        player = LavalinkManager.getInstance().createPlayer(guild);
 
         player.addListener(this);
     }
@@ -97,7 +98,7 @@ public abstract class AbstractPlayer extends AudioEventAdapterWrapped implements
                 quality = AudioConfiguration.ResamplingQuality.MEDIUM;
 
             playerManager.getConfiguration().setResamplingQuality(quality);
-            if (!LavalinkManager.ins.isEnabled()) {
+            if (!LavalinkManager.isRemote()) {
                 playerManager.enableGcMonitoring(); //we are playing tracks locally
             }
             playerManager.setFrameBufferDuration(1000);

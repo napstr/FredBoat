@@ -27,7 +27,6 @@ package fredboat.feature;
 
 import fredboat.FredBoat;
 import fredboat.event.UserListener;
-import fredboat.messaging.internal.Context;
 import fredboat.messaging.internal.LeakSafeContext;
 import fredboat.util.rest.Http;
 import net.dv8tion.jda.core.entities.Channel;
@@ -52,8 +51,6 @@ public final class AkinatorListener extends UserListener {
     private static final String EXCLUSION_URL = "http://api-en4.akinator.com/ws/exclusion";
 
     private final LeakSafeContext context;
-    private final String channelId;
-    private final String userId;
     private StepInfo stepInfo;
 
     private final String signature;
@@ -65,16 +62,14 @@ public final class AkinatorListener extends UserListener {
     private Future timeoutTask;
 
 
-    public AkinatorListener(Context context) throws IOException, JSONException {
-        this.context = new LeakSafeContext(context);
-        this.userId = context.getMember().getUser().getId();
-        this.channelId = context.getTextChannel().getId();
+    public AkinatorListener(LeakSafeContext context) throws IOException, JSONException {
+        this.context = context;
 
         context.sendTyping();
 
         //Start new session
         Http.SimpleRequest request = Http.get(NEW_SESSION_URL, Http.Params.of(
-                "player", userId
+                "player", Long.toString(context.getUserId())
         ));
 
         stepInfo = new StepInfo(request.asJson());
@@ -87,7 +82,7 @@ public final class AkinatorListener extends UserListener {
 
     private void checkTimeout() {
         if (System.currentTimeMillis() - lastActionReceived > TimeUnit.MINUTES.toMillis(5)) {
-            FredBoat.getMainEventListener().removeListener(userId);
+            FredBoat.getMainEventListener().removeListener(Long.toString(context.getUserId()));
             timeoutTask.cancel(false);
         }
     }
@@ -121,7 +116,7 @@ public final class AkinatorListener extends UserListener {
                 context.reply("Bravo !\n"
                         + "You have defeated me !\n"
                         + "<http://akinator.com>");
-                FredBoat.getMainEventListener().removeListener(userId);
+                FredBoat.getMainEventListener().removeListener(Long.toString(context.getUserId()));
                 return;
             }
 
@@ -151,7 +146,7 @@ public final class AkinatorListener extends UserListener {
                 context.reply("Great! Guessed right one more time.\n"
                         + "I love playing with you!\n"
                         + "<http://akinator.com>");
-                FredBoat.getMainEventListener().removeListener(userId);
+                FredBoat.getMainEventListener().removeListener(Long.toString(context.getUserId()));
             } else if (answer == 1) {
                 Http.get(EXCLUSION_URL,
                         Http.Params.of(
@@ -175,7 +170,7 @@ public final class AkinatorListener extends UserListener {
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
         Channel channel = event.getChannel();
 
-        if (!channel.getId().equals(channelId)) {
+        if (channel.getIdLong() != context.getTextChannelId()) {
             return;
         }
 

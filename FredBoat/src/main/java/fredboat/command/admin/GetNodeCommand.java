@@ -39,7 +39,11 @@ public class GetNodeCommand extends Command implements ICommandRestricted {
 
     @Override
     public void onInvoke(@Nonnull CommandContext context) {
-        LavalinkSocket node = LavalinkManager.ins.getLavalink().getLink(context.getGuild()).getCurrentSocket();
+        if (!LavalinkManager.isRemote()) {
+            context.reply("Lavalink is disabled");
+            return;
+        }
+        LavalinkSocket node = LavalinkManager.getInstance().getLavalinkClient().getLink(context.getGuild()).getCurrentSocket();
 
         String reply = String.format("Guild %s id `%s` lavalink socket: `%s`",
                 context.guild.getName(), context.guild.getIdLong(), String.valueOf(node));

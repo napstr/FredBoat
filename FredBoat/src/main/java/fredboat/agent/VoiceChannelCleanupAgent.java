@@ -79,7 +79,7 @@ public class VoiceChannelCleanupAgent extends FredBoatAgent {
                 if (getHumanMembersInVC(vc).size() == 0){
                     closed++;
                     VoteSkipCommand.guildSkipVotes.remove(guild.getIdLong());
-                    LavalinkManager.ins.closeConnection(guild);
+                    LavalinkManager.getInstance().closeConnection(guild);
                     VC_LAST_USED.remove(vc.getId());
                 } else if(isBeingUsed(vc)) {
                     VC_LAST_USED.put(vc.getId(), System.currentTimeMillis());
@@ -94,7 +94,7 @@ public class VoiceChannelCleanupAgent extends FredBoatAgent {
 
                     if (System.currentTimeMillis() - lastUsed > UNUSED_CLEANUP_THRESHOLD) {
                         closed++;
-                        LavalinkManager.ins.closeConnection(guild);
+                        LavalinkManager.getInstance().closeConnection(guild);
                         VC_LAST_USED.remove(vc.getId());
                     }
                 }

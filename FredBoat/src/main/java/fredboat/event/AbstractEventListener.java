@@ -36,6 +36,7 @@ import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 
 public abstract class AbstractEventListener extends ListenerAdapter {
@@ -60,23 +61,42 @@ public abstract class AbstractEventListener extends ListenerAdapter {
             } catch(Exception ex){
                 TextUtils.handleException(ex, new Context() {
                     @Override
+                    @Nonnull
                     public TextChannel getTextChannel() {
                         return event.getChannel();
                     }
 
                     @Override
+                    @Nonnull
                     public Guild getGuild() {
                         return event.getGuild();
                     }
 
                     @Override
+                    @Nonnull
                     public Member getMember() {
                         return event.getMember();
                     }
 
                     @Override
+                    @Nonnull
                     public User getUser() {
                         return event.getAuthor();
+                    }
+
+                    @Override
+                    public long getTextChannelId() {
+                        return getTextChannel().getIdLong();
+                    }
+
+                    @Override
+                    public long getGuildId() {
+                        return getGuild().getIdLong();
+                    }
+
+                    @Override
+                    public long getUserId() {
+                        return getUser().getIdLong();
                     }
                 });
             }

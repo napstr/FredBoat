@@ -94,8 +94,8 @@ public class FredBoatShard extends FredBoat {
                     log.warn("Starting a shard without an event listener!");
                 }
 
-                if (LavalinkManager.ins.isEnabled()) {
-                    builder.addEventListener(LavalinkManager.ins.getLavalink());
+                if (LavalinkManager.isRemote()) {
+                    builder.addEventListener(LavalinkManager.getInstance().getLavalinkClient());
                 }
 
                 if (!System.getProperty("os.arch").equalsIgnoreCase("arm")
@@ -146,9 +146,9 @@ public class FredBoatShard extends FredBoat {
             if (channel == null) return;
             GuildPlayer player = PlayerRegistry.getOrCreate(channel.getGuild());
 
-            LavalinkManager.ins.openConnection(channel);
+            LavalinkManager.getInstance().openConnection(channel);
 
-            if (!LavalinkManager.ins.isEnabled()) {
+            if (!LavalinkManager.isRemote()) {
                 AudioManager am = channel.getGuild().getAudioManager();
                 am.setSendingHandler(player);
             }

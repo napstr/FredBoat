@@ -403,7 +403,7 @@ public class CentralMessaging {
     //                   Miscellaneous messaging related methods
     // ********************************************************************************
 
-    public static void sendTyping(MessageChannel channel) {
+    public static void sendTyping(@Nonnull MessageChannel channel) {
         try {
             channel.sendTyping().queue(
                     null,

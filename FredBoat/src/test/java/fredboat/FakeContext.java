@@ -63,7 +63,22 @@ public class FakeContext extends Context {
 
     @Override
     public User getUser() {
-        return getMember().getUser();
+        return member.getUser();
     }
-    
+
+    @Override
+    public long getTextChannelId() {
+        return channel.getIdLong();
+    }
+
+    @Override
+    public long getGuildId() {
+        return guild.getIdLong();
+    }
+
+    @Override
+    public long getUserId() {
+        return member.getUser().getIdLong();
+    }
+
 }

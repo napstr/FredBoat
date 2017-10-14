@@ -75,8 +75,8 @@ public class GuildPlayer extends AbstractPlayer {
     private final AudioLoader audioLoader;
 
     @SuppressWarnings("LeakingThisInConstructor")
-    public GuildPlayer(Guild guild) {
-        super(guild.getId());
+    public GuildPlayer(@Nonnull Guild guild) {
+        super(guild);
         log.debug("Constructing GuildPlayer({})", guild.getIdLong());
 
         onPlayHook = this::announceTrack;
@@ -85,7 +85,7 @@ public class GuildPlayer extends AbstractPlayer {
         this.shard = FredBoat.getShard(guild.getJDA());
         this.guildId = guild.getIdLong();
 
-        if (!LavalinkManager.ins.isEnabled()) {
+        if (!LavalinkManager.isRemote()) {
             AudioManager manager = guild.getAudioManager();
             manager.setSendingHandler(this);
         }
@@ -93,7 +93,7 @@ public class GuildPlayer extends AbstractPlayer {
         audioLoader = new AudioLoader(audioTrackProvider, getPlayerManager(), this);
     }
 
-    private void announceTrack(AudioTrackContext atc) {
+    private void announceTrack(@Nonnull AudioTrackContext atc) {
         if (getRepeatMode() != RepeatMode.SINGLE && isTrackAnnounceEnabled() && !isPaused()) {
             TextChannel activeTextChannel = getActiveTextChannel();
             if (activeTextChannel != null) {
@@ -103,7 +103,7 @@ public class GuildPlayer extends AbstractPlayer {
         }
     }
 
-    private void handleError(Throwable t) {
+    private void handleError(@Nonnull Throwable t) {
         if (!(t instanceof MessagingException)) {
             log.error("Guild player error", t);
         }
@@ -113,7 +113,7 @@ public class GuildPlayer extends AbstractPlayer {
         }
     }
 
-    public void joinChannel(Member usr) throws MessagingException {
+    public void joinChannel(@Nonnull Member usr) throws MessagingException {
         VoiceChannel targetChannel = getUserCurrentVoiceChannel(usr);
         joinChannel(targetChannel);
     }
@@ -136,7 +136,7 @@ public class GuildPlayer extends AbstractPlayer {
             throw new MessagingException(I18n.get(getGuild()).getString("playerJoinSpeakDenied"));
         }
 
-        LavalinkManager.ins.openConnection(targetChannel);
+        LavalinkManager.getInstance().openConnection(targetChannel);
         AudioManager manager = getGuild().getAudioManager();
         manager.setConnectionListener(new DebugConnectionListener(guildId, shard.getShardInfo()));
 
@@ -145,21 +145,21 @@ public class GuildPlayer extends AbstractPlayer {
 
     public void leaveVoiceChannelRequest(CommandContext commandContext, boolean silent) {
         if (!silent) {
-            VoiceChannel currentVc = LavalinkManager.ins.getConnectedChannel(commandContext.guild);
+            VoiceChannel currentVc = commandContext.guild.getSelfMember().getVoiceState().getChannel();
             if (currentVc == null) {
                 commandContext.reply(commandContext.i18n("playerNotInChannel"));
             } else {
                 commandContext.reply(commandContext.i18nFormat("playerLeftChannel", currentVc.getName()));
             }
         }
-        LavalinkManager.ins.closeConnection(getGuild());
+        LavalinkManager.getInstance().closeConnection(getGuild());
     }
 
     /**
      * May return null if the member is currently not in a channel
      */
     @Nullable
-    public VoiceChannel getUserCurrentVoiceChannel(Member member) {
+    public VoiceChannel getUserCurrentVoiceChannel(@Nonnull Member member) {
         return member.getVoiceState().getChannel();
     }
 
@@ -259,7 +259,7 @@ public class GuildPlayer extends AbstractPlayer {
         }
         Guild guild = j.getGuildById(guildId);
         if (guild != null)
-            return LavalinkManager.ins.getConnectedChannel(guild);
+            return guild.getSelfMember().getVoiceState().getChannel();
         else
             return null;
     }

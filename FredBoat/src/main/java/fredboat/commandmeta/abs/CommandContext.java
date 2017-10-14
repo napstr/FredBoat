@@ -40,6 +40,7 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -113,22 +114,41 @@ public class CommandContext extends Context {
     }
 
     @Override
+    @Nonnull
     public TextChannel getTextChannel() {
         return channel;
     }
 
     @Override
+    @Nonnull
     public Guild getGuild() {
         return guild;
     }
 
     @Override
+    @Nonnull
     public Member getMember() {
         return invoker;
     }
 
     @Override
+    @Nonnull
     public User getUser() {
         return invoker.getUser();
+    }
+
+    @Override
+    public long getTextChannelId() {
+        return channel.getIdLong();
+    }
+
+    @Override
+    public long getGuildId() {
+        return guild.getIdLong();
+    }
+
+    @Override
+    public long getUserId() {
+        return invoker.getUser().getIdLong();
     }
 }

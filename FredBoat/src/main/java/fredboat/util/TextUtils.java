@@ -36,6 +36,7 @@ import net.dv8tion.jda.core.entities.Message;
 import org.json.JSONException;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.time.Instant;
@@ -57,7 +58,7 @@ public class TextUtils {
     private TextUtils() {
     }
 
-    public static Message prefaceWithName(Member member, String msg) {
+    public static Message prefaceWithName(@Nonnull Member member, @Nonnull String msg) {
         msg = ensureSpace(msg);
         return CentralMessaging.getClearThreadLocalMessageBuilder()
                 .append(member.getEffectiveName())
@@ -66,7 +67,7 @@ public class TextUtils {
                 .build();
     }
 
-    public static Message prefaceWithMention(Member member, String msg) {
+    public static Message prefaceWithMention(@Nonnull Member member, @Nonnull String msg) {
         msg = ensureSpace(msg);
         return CentralMessaging.getClearThreadLocalMessageBuilder()
                 .append(member.getAsMention())

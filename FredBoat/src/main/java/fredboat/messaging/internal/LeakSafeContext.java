@@ -26,6 +26,7 @@
 package fredboat.messaging.internal;
 
 import fredboat.FredBoat;
+import fredboat.commandmeta.abs.CommandContext;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
@@ -50,7 +51,7 @@ public class LeakSafeContext extends Context {
         this(channel.getIdLong(), member.getGuild().getIdLong(), member.getUser().getIdLong());
     }
 
-    public LeakSafeContext(@Nonnull Context context) {
+    public LeakSafeContext(@Nonnull CommandContext context) {
         this(context.getTextChannel(), context.getMember());
     }
 
@@ -82,7 +83,21 @@ public class LeakSafeContext extends Context {
     @Override
     @Nullable
     public User getUser() {
-        Member member = getMember();
-        return member != null ? member.getUser() : null;
+        return FredBoat.getUserById(userId);
+    }
+
+    @Override
+    public long getTextChannelId() {
+        return channelId;
+    }
+
+    @Override
+    public long getGuildId() {
+        return guildId;
+    }
+
+    @Override
+    public long getUserId() {
+        return userId;
     }
 }

@@ -49,7 +49,7 @@ public class NodesCommand extends Command implements IMaintenanceCommand {
 
     @Override
     public void onInvoke(@Nonnull CommandContext context) {
-        if (LavalinkManager.ins.isEnabled()) {
+        if (LavalinkManager.isRemote()) {
             handleLavalink(context);
         } else {
             handleLavaplayer(context);
@@ -59,7 +59,7 @@ public class NodesCommand extends Command implements IMaintenanceCommand {
 
     @SuppressWarnings("StringConcatenationInLoop")
     private void handleLavalink(CommandContext context) {
-        Lavalink lavalink = LavalinkManager.ins.getLavalink();
+        Lavalink lavalink = LavalinkManager.getInstance().getLavalinkClient();
         if (context.args.length >= 2 && !context.args[1].equals("host")) {
             try {
                 LavalinkSocket socket = lavalink.getNodes().get(Integer.parseInt(context.args[1]));

@@ -40,8 +40,9 @@ import java.net.URISyntaxException;
 public class NodeAdminCommand extends Command implements ICommandRestricted {
     @Override
     public void onInvoke(@Nonnull CommandContext context) {
-        if (!LavalinkManager.ins.isEnabled()) {
+        if (!LavalinkManager.isRemote()) {
             context.reply("Lavalink is disabled");
+            return;
         }
         if (context.args.length == 1) {
             HelpCommand.sendFormattedCommandHelp(context);
@@ -67,7 +68,7 @@ public class NodeAdminCommand extends Command implements ICommandRestricted {
 
     private void remove(CommandContext context) {
         int key = Integer.valueOf(context.args[2]);
-        LavalinkManager.ins.getLavalink().removeNode(key);
+        LavalinkManager.getInstance().getLavalinkClient().removeNode(key);
         context.reply("Removed node #" + key);
     }
 
@@ -80,7 +81,7 @@ public class NodeAdminCommand extends Command implements ICommandRestricted {
         }
 
         String password = context.args[3];
-        LavalinkManager.ins.getLavalink().addNode(uri, password);
+        LavalinkManager.getInstance().getLavalinkClient().addNode(uri, password);
         context.reply("Added node: " + uri.toString());
     }
 

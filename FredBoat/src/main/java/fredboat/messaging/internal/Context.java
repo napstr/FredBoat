@@ -58,13 +58,23 @@ public abstract class Context {
 
     private static final Logger log = LoggerFactory.getLogger(Context.class);
 
+    @Nullable
     public abstract TextChannel getTextChannel();
 
+    @Nullable
     public abstract Guild getGuild();
 
+    @Nullable
     public abstract Member getMember();
 
+    @Nullable
     public abstract User getUser();
+
+    public abstract long getTextChannelId();
+
+    public abstract long getGuildId();
+
+    public abstract long getUserId();
 
 
     // ********************************************************************************
@@ -72,91 +82,173 @@ public abstract class Context {
     // ********************************************************************************
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture reply(String message) {
-        return CentralMessaging.sendMessage(getTextChannel(), message);
+    @Nonnull
+    public MessageFuture reply(@Nonnull String message) {
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc, message);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture reply(String message, Consumer<Message> onSuccess) {
-        return CentralMessaging.sendMessage(getTextChannel(), message, onSuccess);
+    @Nonnull
+    public MessageFuture reply(@Nonnull String message, Consumer<Message> onSuccess) {
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc, message, onSuccess);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture reply(String message, Consumer<Message> onSuccess, Consumer<Throwable> onFail) {
-        return CentralMessaging.sendMessage(getTextChannel(), message, onSuccess, onFail);
+    @Nonnull
+    public MessageFuture reply(@Nonnull String message, Consumer<Message> onSuccess, Consumer<Throwable> onFail) {
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc, message, onSuccess, onFail);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture reply(Message message) {
-        return CentralMessaging.sendMessage(getTextChannel(), message);
+    @Nonnull
+    public MessageFuture reply(@Nonnull Message message) {
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc, message);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture reply(Message message, Consumer<Message> onSuccess) {
-        return CentralMessaging.sendMessage(getTextChannel(), message, onSuccess);
+    @Nonnull
+    public MessageFuture reply(@Nonnull Message message, Consumer<Message> onSuccess) {
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc, message, onSuccess);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture replyWithName(String message) {
-        return reply(TextUtils.prefaceWithName(getMember(), message));
+    @Nonnull
+    public MessageFuture replyWithName(@Nonnull String message) {
+        Member member = getMember();
+        if (member != null) {
+            return reply(TextUtils.prefaceWithName(member, message));
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException(
+                    String.format("No such member %s in guild %s", getUserId(), getGuildId())));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture replyWithName(String message, Consumer<Message> onSuccess) {
-        return reply(TextUtils.prefaceWithName(getMember(), message), onSuccess);
+    @Nonnull
+    public MessageFuture replyWithName(@Nonnull String message, Consumer<Message> onSuccess) {
+        Member member = getMember();
+        if (member != null) {
+            return reply(TextUtils.prefaceWithName(member, message), onSuccess);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException(
+                    String.format("No such member %s in guild %s", getUserId(), getGuildId())));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture replyWithMention(String message) {
-        return reply(TextUtils.prefaceWithMention(getMember(), message));
+    @Nonnull
+    public MessageFuture replyWithMention(@Nonnull String message) {
+        Member member = getMember();
+        if (member != null) {
+            return reply(TextUtils.prefaceWithMention(member, message));
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException(
+                    String.format("No such member %s in guild %s", getUserId(), getGuildId())));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MessageFuture reply(MessageEmbed embed) {
-        return CentralMessaging.sendMessage(getTextChannel(), embed);
+    @Nonnull
+    public MessageFuture reply(@Nonnull MessageEmbed embed) {
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc, embed);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
 
     @SuppressWarnings("UnusedReturnValue")
+    @Nonnull
     public MessageFuture replyFile(@Nonnull File file, @Nullable Message message) {
-        return CentralMessaging.sendFile(getTextChannel(), file, message);
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendFile(tc, file, message);
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
+    @Nonnull
     public MessageFuture replyImage(@Nonnull String url, @Nullable String message) {
-        return CentralMessaging.sendMessage(getTextChannel(),
-                CentralMessaging.getClearThreadLocalMessageBuilder()
-                        .setEmbed(embedImage(url))
-                        .append(message != null ? message : "")
-                        .build());
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            return CentralMessaging.sendMessage(tc,
+                    CentralMessaging.getClearThreadLocalMessageBuilder()
+                            .setEmbed(embedImage(url))
+                            .append(message != null ? message : "")
+                            .build());
+        } else {
+            return MessageFuture.withException(new NoSuchEntityException("No such text channel: " + getTextChannelId()));
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
+    @Nonnull
     public MessageFuture replyImage(@Nonnull String url) {
         return replyImage(url, null);
     }
 
     public void sendTyping() {
-        CentralMessaging.sendTyping(getTextChannel());
+        TextChannel tc = getTextChannel();
+        if (tc != null) {
+            CentralMessaging.sendTyping(tc);
+        }
     }
 
     public void replyPrivate(@Nonnull String message, @Nullable Consumer<Message> onSuccess, @Nullable Consumer<Throwable> onFail) {
-        getMember().getUser().openPrivateChannel().queue(
-                privateChannel -> CentralMessaging.sendMessage(privateChannel, message, onSuccess, onFail),
-                onFail
-        );
+        User user = getUser();
+        if (user != null) {
+            user.openPrivateChannel().queue(
+                    privateChannel -> CentralMessaging.sendMessage(privateChannel, message, onSuccess, onFail),
+                    onFail
+            );
+        }
     }
 
     //checks whether we have the provided permissions for the channel of this context
     @CheckReturnValue
-    public boolean hasPermissions(Permission... permissions) {
-        return hasPermissions(getTextChannel(), permissions);
+    public boolean hasPermissions(@Nonnull Permission... permissions) {
+        TextChannel tc = getTextChannel();
+        return tc != null && hasPermissions(tc, permissions);
+
     }
 
     //checks whether we have the provided permissions for the provided channel
     @CheckReturnValue
-    public boolean hasPermissions(@Nonnull TextChannel tc, Permission... permissions) {
-        return getGuild().getSelfMember().hasPermission(tc, permissions);
+    public boolean hasPermissions(@Nonnull TextChannel tc, @Nonnull Permission... permissions) {
+        Guild guild = getGuild();
+        if (guild == null) return false;
+
+        Member self = guild.getSelfMember();
+        return self.hasPermission(tc, permissions);
     }
 
     /**
@@ -165,6 +257,7 @@ public abstract class Context {
      * @param key Key of the i18n string.
      * @return Formatted i18n string, or a default language string if i18n is not found.
      */
+    @Nonnull
     @CheckReturnValue
     public String i18n(@Nonnull String key) {
         if (getI18n().containsKey(key)) {
@@ -182,6 +275,7 @@ public abstract class Context {
      * @param params Parameter(s) to be apply into the i18n string.
      * @return Formatted i18n string.
      */
+    @Nonnull
     @CheckReturnValue
     public String i18nFormat(@Nonnull String key, Object... params) {
         if (params == null || params.length == 0) {
@@ -197,6 +291,7 @@ public abstract class Context {
 
     private ResourceBundle i18n;
 
+    @Nonnull
     private ResourceBundle getI18n() {
         if (this.i18n == null) {
             this.i18n = I18n.get(getGuild());
@@ -204,7 +299,8 @@ public abstract class Context {
         return this.i18n;
     }
 
-    private static MessageEmbed embedImage(String url) {
+    @Nonnull
+    private static MessageEmbed embedImage(@Nonnull String url) {
         return CentralMessaging.getColoredEmbedBuilder()
                 .setImage(url)
                 .build();

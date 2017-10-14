@@ -27,6 +27,7 @@ package fredboat.messaging;
 
 import net.dv8tion.jda.core.entities.Message;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -43,5 +44,12 @@ public class MessageFuture extends CompletableFuture<Message> {
 
     public Message getWithDefaultTimeout() throws InterruptedException, ExecutionException, TimeoutException {
         return get(30, TimeUnit.SECONDS);
+    }
+
+    @Nonnull
+    public static MessageFuture withException(@Nonnull Exception e) {
+        MessageFuture mf = new MessageFuture();
+        mf.completeExceptionally(e);
+        return mf;
     }
 }

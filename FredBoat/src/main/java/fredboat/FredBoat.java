@@ -30,7 +30,6 @@ import fredboat.agent.CarbonitexAgent;
 import fredboat.agent.DBConnectionWatchdogAgent;
 import fredboat.agent.FredBoatAgent;
 import fredboat.api.API;
-import fredboat.audio.player.LavalinkManager;
 import fredboat.audio.queue.MusicPersistenceHandler;
 import fredboat.commandmeta.CommandRegistry;
 import fredboat.commandmeta.init.MainCommandInitializer;
@@ -49,6 +48,7 @@ import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.hooks.EventListener;
@@ -139,7 +139,7 @@ public abstract class FredBoat {
 
         //Initialise event listeners
         mainEventListener = new EventListenerBoat();
-        LavalinkManager.ins.start();
+//        LavalinkManager.ins.start();
 
         //Commands
         if (Config.CONFIG.getDistribution() == DistributionEnum.DEVELOPMENT)
@@ -377,6 +377,16 @@ public abstract class FredBoat {
         for (FredBoat fb : shards) {
             Guild g = fb.getJda().getGuildById(id);
             if (g != null) return g;
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static User getUserById(long id) {
+        for (FredBoat fb : shards) {
+            User u = fb.getJda().getUserById(id);
+            if (u != null) return u;
         }
 
         return null;

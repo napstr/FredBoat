@@ -59,7 +59,7 @@ public class PlayerRegistry {
         }
 
         // Attempt to set the player as a sending handler. Important after a shard revive
-        if (!LavalinkManager.ins.isEnabled() && jda.getGuildById(k) != null) {
+        if (!LavalinkManager.getInstance().isRemote() && jda.getGuildById(k) != null) {
             jda.getGuildById(k).getAudioManager().setSendingHandler(player);
         }
 

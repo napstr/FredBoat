@@ -29,7 +29,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import fredboat.Config;
 import fredboat.audio.player.GuildPlayer;
-import fredboat.audio.player.LavalinkManager;
 import fredboat.audio.player.PlayerLimitManager;
 import fredboat.audio.player.PlayerRegistry;
 import fredboat.audio.player.VideoSelection;
@@ -45,6 +44,7 @@ import fredboat.util.rest.SearchUtil;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message.Attachment;
+import net.dv8tion.jda.core.entities.VoiceChannel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
@@ -114,16 +114,18 @@ public class PlayCommand extends Command implements IMusicCommand, ICommandRestr
     private void handleNoArguments(CommandContext context) {
         Guild guild = context.guild;
         GuildPlayer player = PlayerRegistry.getOrCreate(guild);
+        VoiceChannel currentVc = guild.getSelfMember().getVoiceState().getChannel();
+
         if (player.isQueueEmpty()) {
             context.reply(context.i18n("playQueueEmpty"));
         } else if (player.isPlaying()) {
             context.reply(context.i18n("playAlreadyPlaying"));
-        } else if (player.getHumanUsersInCurrentVC().isEmpty() && LavalinkManager.ins.getConnectedChannel(guild) != null) {
+        } else if (player.getHumanUsersInCurrentVC().isEmpty() && currentVc != null) {
             context.reply(context.i18n("playVCEmpty"));
-        } else if(LavalinkManager.ins.getConnectedChannel(guild) == null) {
+        } else if (currentVc == null) {
             // When we just want to continue playing, but the user is not in a VC
             JOIN_COMMAND.onInvoke(context);
-            if(LavalinkManager.ins.getConnectedChannel(guild) != null || guild.getAudioManager().isAttemptingToConnect()) {
+            if (currentVc != null || guild.getAudioManager().isAttemptingToConnect()) {
                 player.play();
                 context.reply(context.i18n("playWillNowPlay"));
             }

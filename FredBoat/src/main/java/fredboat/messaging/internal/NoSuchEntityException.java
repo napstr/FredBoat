@@ -1,4 +1,5 @@
 /*
+ *
  * MIT License
  *
  * Copyright (c) 2017 Frederik Ar. Mikkelsen
@@ -20,39 +21,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
-package fredboat.command.fun;
+package fredboat.messaging.internal;
 
-import fredboat.FredBoat;
-import fredboat.commandmeta.abs.Command;
-import fredboat.commandmeta.abs.CommandContext;
-import fredboat.commandmeta.abs.IFunCommand;
-import fredboat.feature.AkinatorListener;
-import fredboat.messaging.internal.Context;
-import fredboat.messaging.internal.LeakSafeContext;
-import org.json.JSONException;
+/**
+ * Created by napster on 12.10.17.
+ */
+public class NoSuchEntityException extends Exception {
+    private static final long serialVersionUID = 5615069853335204656L;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-
-public class AkinatorCommand extends Command implements IFunCommand {
-
-    @Override
-    public void onInvoke(@Nonnull CommandContext context) {
-        try {
-            String userId = context.invoker.getUser().getId();
-            AkinatorListener akinator = new AkinatorListener(new LeakSafeContext(context));
-            FredBoat.getMainEventListener().putListener(userId, akinator);
-        } catch (IOException | JSONException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Nonnull
-    @Override
-    public String help(@Nonnull Context context) {
-        return "{0}{1}\n#Play a guessing game with Akinator.";
+    public NoSuchEntityException(String message) {
+        super(message);
     }
 }

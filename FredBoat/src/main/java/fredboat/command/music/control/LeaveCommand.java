@@ -51,7 +51,7 @@ public class LeaveCommand extends Command implements IMusicCommand, ICommandRest
             player.leaveVoiceChannelRequest(context, false);
         } catch (Exception e) {
             log.error("Something caused us to not properly leave a voice channel!", e);
-            LavalinkManager.ins.closeConnection(context.guild);
+            LavalinkManager.getInstance().closeConnection(context.guild);
         }
     }
 
