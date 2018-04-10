@@ -1,4 +1,5 @@
 /*
+ *
  * MIT License
  *
  * Copyright (c) 2017 Frederik Ar. Mikkelsen
@@ -20,7 +21,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package fredboat.command.moderation;
@@ -39,18 +39,21 @@ import net.dv8tion.jda.core.requests.restaction.AuditableRestAction;
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
-public class SoftbanCommand extends DiscordModerationCommand<Void> {
+/**
+ * Created by napster on 27.01.18.
+ * <p>
+ * Unban a user.
+ */
+public class UnbanCommand extends DiscordModerationCommand<Void> {
 
-
-    public SoftbanCommand(String name, String... aliases) {
+    public UnbanCommand(String name, String... aliases) {
         super(name, aliases);
     }
 
     @Nonnull
     @Override
     protected AuditableRestAction<Void> modAction(@Nonnull ModActionInfo modActionInfo) {
-        return modActionInfo.context.guild.getController()
-                .ban(modActionInfo.targetUser, 7, modActionInfo.getFormattedReason());
+        return modActionInfo.context.guild.getController().unban(modActionInfo.targetUser);
     }
 
     @Override
@@ -61,17 +64,11 @@ public class SoftbanCommand extends DiscordModerationCommand<Void> {
     @Nonnull
     @Override
     protected Consumer<Void> onSuccess(@Nonnull ModActionInfo modActionInfo) {
-        String successOutput = modActionInfo.context.i18nFormat("softbanSuccess",
-                modActionInfo.targetUser.getAsMention() + " " + TextUtils.escapeAndDefuse(modActionInfo.targetAsString()))
-                + "\n" + TextUtils.escapeAndDefuse(modActionInfo.plainReason);
+        String successOutput = modActionInfo.context.i18nFormat("unbanSuccess",
+                modActionInfo.targetUser.getAsMention() + " " + TextUtils.escapeAndDefuse(modActionInfo.targetAsString()));
 
         return aVoid -> {
-            Metrics.successfulRestActions.labels("ban").inc();
-            modActionInfo.context.guild.getController().unban(modActionInfo.targetUser).queue(
-                    __ -> Metrics.successfulRestActions.labels("unban").inc(),
-                    CentralMessaging.getJdaRestActionFailureHandler(String.format("Failed to unban user %s in guild %s",
-                            modActionInfo.targetAsString(), modActionInfo.context.guild.getId()))
-            );
+            Metrics.successfulRestActions.labels("unban").inc();
             modActionInfo.context.replyWithName(successOutput);
         };
     }
@@ -80,17 +77,24 @@ public class SoftbanCommand extends DiscordModerationCommand<Void> {
     @Override
     protected Consumer<Throwable> onFail(@Nonnull ModActionInfo modActionInfo) {
         String escapedTargetName = TextUtils.escapeAndDefuse(modActionInfo.targetAsString());
-        //noinspection Duplicates
         return t -> {
-            if (t instanceof IllegalArgumentException) { //banned nonexistent user by id, see GuildController#ban(String, int, String)
+            if (t instanceof IllegalArgumentException) { //user was not banned (see GuildController#unban(String))
+                if (modActionInfo.targetUser != null) {
+                    //existing user
+//                    modActionInfo.context.getGuild().getJDA().retrieveUserById()
+                } else {
+                    //nonexisting or not banned
+                }
+
+                //todo correctly handle it if at all
                 String reply = modActionInfo.context.i18nFormat("parseNotAUser", "`" + modActionInfo.targetUser.getId() + "`");
                 reply += "\n" + modActionInfo.context.i18nFormat("parseSnowflakeIdHelp", HelpCommand.LINK_DISCORD_DOCS_IDS);
                 modActionInfo.context.reply(reply);
                 return;
             }
-            CentralMessaging.getJdaRestActionFailureHandler(String.format("Failed to ban user %s in guild %s",
+            CentralMessaging.getJdaRestActionFailureHandler(String.format("Failed to unban user %s in guild %s",
                     escapedTargetName, modActionInfo.context.guild.getId())).accept(t);
-            modActionInfo.context.replyWithName(modActionInfo.context.i18nFormat("modBanFail",
+            modActionInfo.context.replyWithName(modActionInfo.context.i18nFormat("modUnbanFail",
                     modActionInfo.targetUser.getAsMention() + " " + escapedTargetName));
         };
     }
@@ -101,32 +105,14 @@ public class SoftbanCommand extends DiscordModerationCommand<Void> {
         Member target = modActionInfo.targetMember;
         Member mod = context.invoker;
 
-        //a softban is like a kick + clear messages, so check for those on the invoker
-        if (!context.checkInvokerPermissionsWithFeedback(Permission.KICK_MEMBERS, Permission.MESSAGE_MANAGE)) {
+        if (!context.checkInvokerPermissionsWithFeedback(Permission.BAN_MEMBERS)) {
             return false;
         }
-        //we however need ban perms to do this
         if (!context.checkSelfPermissionsWithFeedback(Permission.BAN_MEMBERS)) {
             return false;
         }
         if (target == null) {
             return true;
-        }
-
-
-        if(mod == target) {
-            context.replyWithName(context.i18n("softbanFailSelf"));
-            return false;
-        }
-
-        if(target.isOwner()) {
-            context.replyWithName(context.i18n("softbanFailOwner"));
-            return false;
-        }
-
-        if(target == target.getGuild().getSelfMember()) {
-            context.replyWithName(context.i18n("softbanFailMyself"));
-            return false;
         }
 
         if (DiscordUtil.getHighestRolePosition(mod) <= DiscordUtil.getHighestRolePosition(target) && !mod.isOwner()) {
@@ -142,9 +128,10 @@ public class SoftbanCommand extends DiscordModerationCommand<Void> {
         return true;
     }
 
+
     @Nonnull
     @Override
     public String help(@Nonnull Context context) {
-        return "{0}{1} <user> <reason>\n{0}{1} id <userid> <reason>\n#" + context.i18n("helpSoftbanCommand");
+        return "{0}{1} <user>\n{0}{1} id <userid>\n#" + context.i18n("helpUnbanCommand");
     }
 }

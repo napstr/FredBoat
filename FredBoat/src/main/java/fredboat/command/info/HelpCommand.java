@@ -49,10 +49,13 @@ import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.priv.PrivateMessageReceivedEvent;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
 
 public class HelpCommand extends Command implements IInfoCommand {
+
+    public static final String LINK_DISCORD_DOCS_IDS = "https://support.discordapp.com/hc/en-us/articles/206346498";
 
     //keeps track of whether a user received help lately to avoid spamming/clogging up DMs which are rather harshly ratelimited
     public static final Cache<Long, Boolean> HELP_RECEIVED_RECENTLY = CacheBuilder.newBuilder()
@@ -68,7 +71,7 @@ public class HelpCommand extends Command implements IInfoCommand {
     public void onInvoke(@Nonnull CommandContext context) {
 
         if (context.hasArguments()) {
-            sendFormattedCommandHelp(context, context.args[0]);
+            sendFormattedCommandHelp(context, context.args[0], null);
         } else {
             sendGeneralHelp(context);
         }
@@ -149,17 +152,31 @@ public class HelpCommand extends Command implements IInfoCommand {
                 commandOrAlias, thirdParam);
     }
 
-    public static void sendFormattedCommandHelp(CommandContext context) {
-        sendFormattedCommandHelp(context, context.trigger);
+    public static void sendFormattedCommandHelp(@Nonnull CommandContext context) {
+        sendFormattedCommandHelp(context, context.trigger, null);
     }
 
-    private static void sendFormattedCommandHelp(CommandContext context, String trigger) {
+    public static void sendFormattedCommandHelp(@Nonnull CommandContext context, String specificHelpMessage) {
+        sendFormattedCommandHelp(context, context.trigger, specificHelpMessage);
+    }
+
+    /**
+     * @param trigger             The trigger of the command to look up the help for.
+     * @param specificHelpMessage Optional additional, specific help. Like when there is a special issue with some user
+     *                            input, that is not covered in the general help of a command. Will be prepended to the
+     *                            output.
+     */
+    private static void sendFormattedCommandHelp(@Nonnull CommandContext context, @Nonnull String trigger,
+                                                 @Nullable String specificHelpMessage) {
         Command command = CommandRegistry.findCommand(trigger);
         if (command == null) {
             String out = "`" + TextUtils.escapeMarkdown(context.getPrefix()) + trigger + "`: " + context.i18n("helpUnknownCommand");
             out += "\n" + context.i18nFormat("helpCommandsPromotion",
                     "`" + TextUtils.escapeMarkdown(context.getPrefix())
                             + CommandInitializer.COMMANDS_COMM_NAME + "`");
+            if (specificHelpMessage != null) {
+                out = specificHelpMessage + "\n" + out;
+            }
             context.replyWithName(out);
             return;
         }
@@ -171,6 +188,9 @@ public class HelpCommand extends Command implements IInfoCommand {
             out += "\n#" + context.i18n("helpCommandOwnerRestricted");
         out = TextUtils.asCodeBlock(out, "md");
         out = context.i18n("helpProperUsage") + out;
+        if (specificHelpMessage != null) {
+            out = specificHelpMessage + "\n" + out;
+        }
         context.replyWithName(out);
     }
 
